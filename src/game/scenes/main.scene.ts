@@ -84,18 +84,15 @@ export default class MainScene extends Phaser.Scene {
 
     // Setup
     this.player.setScale(0.7);
-    this.player.setBounce(0.4);
     this.player.setCollideWorldBounds(true);
     this.platforms.create(100, 800, "platform2");
     this.platforms.create(490, 800, "platform2");
 
     // Collisions
     this.physics.add.collider(this.player, this.platforms);
-    this.physics.add.collider(this.enemies, this.platforms, (enemy) => {
-      enemy.destroy();
-    });
+    this.physics.add.collider(this.enemies, this.platforms, (enemy) => enemy.destroy());
     this.physics.add.collider(this.player, this.enemies, (p, e) => {
-      console.log("Damage!", p, e);
+      console.log("Damage!");
       this.iState.life -= this.iState.damage;
       if (this.iState.life === 0) {
         this.gameOver();
@@ -108,14 +105,11 @@ export default class MainScene extends Phaser.Scene {
         // Disable body, deactivate game object, hide game object
         item.gameObject.disableBody(true, true);
         this.iState.bullets++;
-        console.log("Gained bullet", this.iState.bullets);
       }
     });
   }
 
   update(time) {
-    // console.log('update. input', this.keys);
-
     if (this.keys.left?.isDown) {
       this.player.setVelocityX(-this.iState.playerSpeed.x);
     } else if (this.keys.right?.isDown) {
@@ -124,32 +118,15 @@ export default class MainScene extends Phaser.Scene {
       this.player.setVelocityX(0);
     }
 
-    // Make the player jump if he is touching the ground
-    // if (this.keys.up?.isDown && !this.player.body.touching.up) {
-    //   this.player.setVelocityY(-this.iState.playerSpeed.y);
-    // } else if (this.keys.down?.isDown && !this.player.body.touching.down) {
-    //   this.player.setVelocityY(this.iState.playerSpeed.y);
-    // }
-
     if (this.keys.space?.isDown) {
       this.fire();
     }
 
-    this.drawMenu(time);
+    this.drawMenu();
   }
 
-  drawMenu(time) {
-    const ms = Math.floor(time);
-    const formatTime = (ms) => {
-      const pad = (n) => (parseInt(n) > 9 ? n : "0" + n);
-      const seconds = Math.floor(ms / 1000);
-      const minutes = Math.floor(ms / (60 * 1000));
-      const hours = Math.floor(ms / (60 * 60 * 1000));
-      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-    };
+  drawMenu() {
     this.menu.score.setText(`Score: ${this.iState.score}`);
-    // this.menu.time.setText(`Time: ${time(Math.floor(this.time.now))}`);
-    this.menu.time.setText(`Time: ${formatTime(ms)}`);
     this.menu.life.setText(`Life: ${this.iState.life}`);
     this.menu.destroyed.setText(`Destroyed: ${this.iState.destroyed}`);
     this.menu.bullets.setText(`Bullets: ${this.iState.bullets}`);
@@ -170,37 +147,9 @@ export default class MainScene extends Phaser.Scene {
   fire() {
     if (this.time.now > this.iState.nextFire) {
       this.iState.nextFire = this.time.now + this.iState.fireRate;
-      // handle bullet direction, default go up
-      // let direction: "up" | "down" | "left" | "right" = "up";
       const distance = this.iState.bulletDistance;
-      let coords = { x: this.player.x, y: this.player.y - distance };
-      // if (this.keys.left?.isDown) {
-      //   direction = "left";
-      //   coords = {
-      //     x: this.player.x - distance,
-      //     y: this.player.y,
-      //   };
-      // } else if (this.keys.right?.isDown) {
-      //   direction = "right";
-      //   coords = {
-      //     x: this.player.x - distance,
-      //     y: this.player.y,
-      //   };
-      // } else if (this.keys.up?.isDown) {
-      //   direction = "up";
-      //   coords = {
-      //     x: this.player.x,
-      //     y: this.player.y - distance,
-      //   };
-      // } else if (this.keys.down?.isDown) {
-      //   direction = "down";
-      //   coords = {
-      //     x: this.player.x,
-      //     y: this.player.y + distance,
-      //   };
-      // }
+      const coords = { x: this.player.x, y: this.player.y - distance };
       const bullet = this.bullets.get(coords.x, coords.y);
-      console.log("Bullet", bullet);
       if (bullet) {
         if (!bullet.body.enable) {
           bullet.enableBody();
@@ -208,22 +157,6 @@ export default class MainScene extends Phaser.Scene {
         bullet.setActive(true);
         bullet.setVisible(true);
         bullet.setVelocityY(-this.iState.bulletSpeed.y);
-        // switch (direction) {
-        //   case "up":
-        //     bullet.setVelocityY(-this.iState.bulletSpeed.y);
-        //     break;
-        //   case "down":
-        //     bullet.setVelocityY(this.iState.bulletSpeed.y);
-        //     break;
-        //   case "left":
-        //     bullet.setVelocityX(-this.iState.bulletSpeed.x);
-        //     bullet.setVelocityY(this.player.body.velocity.y);
-        //     break;
-        //   case "right":
-        //     bullet.setVelocityX(this.iState.bulletSpeed.x);
-        //     bullet.setVelocityY(this.player.body.velocity.y);
-        //     break;
-        // }
         // Turn on wall collision
         bullet.setCollideWorldBounds(true);
         // Allows to listen to the 'worldbounds' event
@@ -235,7 +168,7 @@ export default class MainScene extends Phaser.Scene {
           this.iState.score += this.iState.point;
           this.iState.destroyed++;
           this.iState.bullets++;
-          console.log("Hit!", a, b, this.iState);
+          console.log("Hit!");
           a.destroy();
           b.destroy();
         });
