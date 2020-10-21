@@ -40,27 +40,25 @@ export default class MainScene extends Phaser.Scene {
       physics: {
         default: "arcade",
         arcade: {
-          // debug: true,
           gravity: {
             y: 100,
           },
         },
       },
     });
-    this.iState = clone(invadersState);
   }
 
   init() {
     console.log("main.init");
+    this.iState = clone(invadersState);
   }
 
   createMenu() {
     const fontSettings = { color: "black" };
     this.menu.score = this.add.text(0, 0, `Score: 0`, fontSettings);
-    this.menu.time = this.add.text(200, 0, `Time: 0`, fontSettings);
-    this.menu.life = this.add.text(400, 0, `Life: 0`, fontSettings);
-    this.menu.destroyed = this.add.text(0, 20, `Kills: 0`, fontSettings);
-    this.menu.bullets = this.add.text(200, 20, `Bullets: 0`, fontSettings);
+    this.menu.life = this.add.text(150, 0, `Life: 0`, fontSettings);
+    this.menu.destroyed = this.add.text(300, 0, `Kills: 0`, fontSettings);
+    this.menu.bullets = this.add.text(450, 0, `Bullets: 0`, fontSettings);
   }
 
   generateRandomNumberBetween(min: number = 1, max: number = 10) {
@@ -179,18 +177,7 @@ export default class MainScene extends Phaser.Scene {
   gameOver() {
     console.log("Game over", this.iState);
     this.enemiesGenerator.destroy();
-    this.scene.pause();
-    const x = this.cameras.main.centerX;
-    const y = this.cameras.main.centerY;
-    const gameOver = this.add.text(x, y, "Game Over\nClick to restart", { color: "black" });
-    gameOver.setX(gameOver.x - gameOver.width / 2);
-    gameOver.setY(gameOver.y - gameOver.height / 2);
-    this.input.once(
-      "pointerup",
-      (pointer) => {
-        // this.scene.restart();
-      },
-      this
-    );
+    this.scene.stop();
+    this.scene.start("EndScene", { ...this.iState });
   }
 }
