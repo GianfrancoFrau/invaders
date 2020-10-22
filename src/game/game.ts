@@ -6,6 +6,7 @@ import EndScene from "./scenes/end.scene";
 const DEFAULT_WIDTH = 600;
 const DEFAULT_HEIGHT = 800;
 
+// Phaser Game Config https://photonstorm.github.io/phaser3-docs/Phaser.Core.Config.html
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   backgroundColor: "#ffffff",

@@ -7,25 +7,3 @@ body {
   margin: 0;
   background: black;
 }
-
-/* #game-container {
-  display: flex;
-  flex-direction: row;
-  width: 1000px;
-  height: 808px;
-  border: 2px solid #ddd;
-  margin: 0 auto;
-  padding: 2px;
-}
-
-#buttons {
-  margin: 0 auto;
-  text-align: center;
-  padding-top: 50px;
-}
-
-#ui {
-  border: 2px solid #ddd;
-  width: 392px;
-  padding: 10px;
-} */

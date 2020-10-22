@@ -1,3 +1,4 @@
+// A global "state" object that contains default game settings
 const invadersState = {
   playerSpeed: {
     x: 300,
@@ -10,8 +11,8 @@ const invadersState = {
   enemiesSpeed: {
     y: 50,
   },
-  point: 1,
-  life: 5,
+  point: 5,
+  life: 3,
   damage: 1,
   score: 0,
   bullets: 3,
@@ -20,8 +21,9 @@ const invadersState = {
   fireRate: 400,
   startTime: 0,
   bulletDistance: 20,
+  enemiesGeneratorDelay: 1000,
 };
-
+// Object deep clone
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
 export default class MainScene extends Phaser.Scene {
@@ -32,8 +34,9 @@ export default class MainScene extends Phaser.Scene {
   private enemiesGenerator: Phaser.Time.TimerEvent;
   private bullets: Phaser.Physics.Arcade.Group;
   private iState;
-  private menu: { [item: string]: Phaser.GameObjects.Text } = {};
+  private gameScore: Phaser.GameObjects.Text;
 
+  // Apply custom config for this scene that will override global game config
   constructor() {
     super({
       key: "MainScene",
@@ -49,24 +52,40 @@ export default class MainScene extends Phaser.Scene {
   }
 
   init() {
-    console.log("main.init");
+    // console.log("main.init");
     this.iState = clone(invadersState);
   }
 
-  createMenu() {
-    const fontSettings = { color: "black" };
-    this.menu.score = this.add.text(0, 0, `Score: 0`, fontSettings);
-    this.menu.life = this.add.text(150, 0, `Life: 0`, fontSettings);
-    this.menu.destroyed = this.add.text(300, 0, `Kills: 0`, fontSettings);
-    this.menu.bullets = this.add.text(450, 0, `Bullets: 0`, fontSettings);
+  getGameScore(score, destroyed, life): string {
+    return `Score: ${score}\t\t\t\tKills: ${destroyed}\t\t\t\tLife: ${life}`;
   }
 
+  // Display game score
+  createMenu() {
+    const fontSettings = { color: "black" };
+    this.gameScore = this.add.text(0, 0, this.getGameScore(0, 0, 0), fontSettings);
+  }
+
+  // Update game score
+  updateMenu() {
+    this.gameScore.setText(this.getGameScore(this.iState.score, this.iState.destroyed, this.iState.life));
+  }
+
+  // generate a random number between [min,max]
   generateRandomNumberBetween(min: number = 1, max: number = 10) {
     return Math.floor(Math.random() * (max - min) + min);
   }
 
+  // Create Phaser GameObject instances
   create() {
-    // Creation
+    /*
+      draw the game menu
+      create the player image
+      create the game platform
+      a keys object for listeing player input
+      a group of bullets that the player will fire
+      a "generateEnemies" function that will be executed how set in "enemiesGeneratorDelay"
+    */
     this.createMenu();
     this.player = this.physics.add.sprite(250, 735, "player");
     this.platforms = this.physics.add.staticGroup();
@@ -74,40 +93,53 @@ export default class MainScene extends Phaser.Scene {
     this.enemies = this.physics.add.group();
     this.bullets = this.physics.add.group({ defaultKey: "bullet", maxSize: this.iState.bullets });
     this.enemiesGenerator = this.time.addEvent({
-      delay: 1000,
-      callback: this.generateEnemies,
+      delay: this.iState.enemiesGeneratorDelay,
+      callback: this.generateEnemy,
       callbackScope: this,
       loop: true,
     });
 
-    // Setup
-    this.player.setScale(0.7);
+    /* 
+      Objects setup
+      allow the player to collide with world bounds
+      create two platforms on which the player will move
+    */
     this.player.setCollideWorldBounds(true);
-    this.platforms.create(100, 800, "platform2");
-    this.platforms.create(490, 800, "platform2");
+    this.platforms.create(0, 800, "platform"); // (x,y,sprite name)
+    this.platforms.create(500, 800, "platform");
 
-    // Collisions
+    /* 
+      Collisions
+      allow the player collide with platforms
+      allow enemies collide with platforms and destroy them when this happens
+      allow player collide with enemies and reduce player life
+        life = 0 => game over
+        destroy enemy when collides with the player
+    */
     this.physics.add.collider(this.player, this.platforms);
     this.physics.add.collider(this.enemies, this.platforms, (enemy) => enemy.destroy());
     this.physics.add.collider(this.player, this.enemies, (p, e) => {
-      console.log("Damage!");
+      // console.log("Damage!");
       this.iState.life -= this.iState.damage;
       if (this.iState.life === 0) {
         this.gameOver();
       }
       e.destroy();
     });
+    /*
+      We have to listen to when a bullet collides with world buonds
+      and deactivate the bullet body to make it reusable
+    */
     this.physics.world.on("worldbounds", (item) => {
-      console.log("onworldbounds", item);
-      if (item && item.gameObject && item.gameObject.texture && item.gameObject.texture.key === "bullet") {
-        // Disable body, deactivate game object, hide game object
-        item.gameObject.disableBody(true, true);
-        this.iState.bullets++;
-      }
+      // Disable body, deactivate game object, hide game object
+      item.gameObject.disableBody(true, true);
+      this.iState.bullets++;
     });
   }
 
-  update(time) {
+  // Phaser update loop
+  update() {
+    // Listen player input and move on left/right and fire
     if (this.keys.left?.isDown) {
       this.player.setVelocityX(-this.iState.playerSpeed.x);
     } else if (this.keys.right?.isDown) {
@@ -115,38 +147,33 @@ export default class MainScene extends Phaser.Scene {
     } else {
       this.player.setVelocityX(0);
     }
-
     if (this.keys.space?.isDown) {
       this.fire();
     }
-
-    this.drawMenu();
+    this.updateMenu();
   }
 
-  drawMenu() {
-    this.menu.score.setText(`Score: ${this.iState.score}`);
-    this.menu.life.setText(`Life: ${this.iState.life}`);
-    this.menu.destroyed.setText(`Destroyed: ${this.iState.destroyed}`);
-    this.menu.bullets.setText(`Bullets: ${this.iState.bullets}`);
-  }
-
-  generateEnemies() {
+  // Generates one enemy with random properties
+  generateEnemy() {
     const x = this.generateRandomNumberBetween(30, 570);
     const y = 60;
     const velocity = this.iState.enemiesSpeed.y + this.generateRandomNumberBetween(this.iState.enemiesSpeed.y / 2, this.iState.enemiesSpeed.y * 1.5);
     const scale = 1 + this.generateRandomNumberBetween(0, 2);
     const enemyType = "enemy" + this.generateRandomNumberBetween(1, 3);
-    console.log("enemy", { enemyType, x, y, scale, velocity });
     const enemy = this.enemies.create(x, y, enemyType);
     enemy.setScale(scale);
     enemy.setVelocityY(velocity);
+    // console.log("enemy", { enemy, enemyType, x, y, scale, velocity });
   }
 
+  // Fire a bullet
   fire() {
-    if (this.time.now > this.iState.nextFire) {
+    // change fireRate and bullets to improve shot frequency
+    if (this.time.now > this.iState.nextFire && this.iState.bullets > 0) {
       this.iState.nextFire = this.time.now + this.iState.fireRate;
       const distance = this.iState.bulletDistance;
       const coords = { x: this.player.x, y: this.player.y - distance };
+      // get a bullet item and place on the given coordinates
       const bullet = this.bullets.get(coords.x, coords.y);
       if (bullet) {
         if (!bullet.body.enable) {
@@ -160,24 +187,26 @@ export default class MainScene extends Phaser.Scene {
         // Allows to listen to the 'worldbounds' event
         bullet.body.onWorldBounds = true;
         this.iState.bullets--;
-        console.log("Fired bullets", this.iState.bullets);
+        // console.log("Fired bullets", this.iState.bullets);
         // Bullet - enemy collision
         this.physics.add.collider(this.enemies, bullet, (a, b) => {
           this.iState.score += this.iState.point;
           this.iState.destroyed++;
           this.iState.bullets++;
-          console.log("Hit!");
           a.destroy();
           b.destroy();
+          // console.log("Hit!");
         });
       }
     }
   }
 
   gameOver() {
-    console.log("Game over", this.iState);
+    // console.log("Game over", this.iState);
+    // destroy the enemies generator loop
     this.enemiesGenerator.destroy();
+    // stop this scene and go to the final scene passing the score
     this.scene.stop();
-    this.scene.start("EndScene", { ...this.iState });
+    this.scene.start("EndScene", { score: this.iState.score });
   }
 }

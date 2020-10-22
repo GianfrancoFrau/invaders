@@ -3,18 +3,14 @@ export default class StartScene extends Phaser.Scene {
     super({ key: "StartScene" });
   }
 
-  init() {
-    console.log('start.init');
-  }
-
+  // preload all game assets
   preload() {
+    this.load.image("platform", "assets/platform.png");
+    this.load.image("player", "assets/dude.png");
     this.load.image("bullet", "assets/bullet.png");
     this.load.image("enemy1", "assets/e1.png");
     this.load.image("enemy2", "assets/e2.png");
     this.load.image("enemy3", "assets/e3.png");
-    this.load.image("platform", "assets/platform.png");
-    this.load.image("platform2", "assets/platform2.png");
-    this.load.image("player", "assets/player.png");
   }
 
   create() {
@@ -35,15 +31,8 @@ export default class StartScene extends Phaser.Scene {
     `;
     const text = this.add.text(x, y, startText, { color: "black", boundsAlignH: "center" });
     // Really center text
-    text.setX(text.x - text.width/2);
-    text.setY(text.y - text.height/2);
-    this.input.once(
-      "pointerup",
-      (pointer) => {
-        this.scene.start("MainScene");
-        console.log('click');
-      },
-      this
-    );
+    text.setX(text.x - text.width / 2);
+    text.setY(text.y - text.height / 2);
+    this.input.once("pointerup", (pointer) => this.scene.start("MainScene"), this);
   }
 }
