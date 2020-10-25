@@ -9,6 +9,12 @@ I'm learning Phaser.js, so I made a super simple bug shooter.
 
 ## Changelog
 
+v. 1.1
+
+- Centered and responsive game screen
+- Add simple animation using Phaser.Tween when player is damaged
+
+
 v. 1.0
 
 - 3 game scenes
