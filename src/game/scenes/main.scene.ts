@@ -73,7 +73,7 @@ export default class MainScene extends Phaser.Scene {
 
   // generate a random number between [min,max]
   generateRandomNumberBetween(min: number = 1, max: number = 10) {
-    return Math.floor(Math.random() * (max - min) + min);
+    return Phaser.Math.Between(min, max);
   }
 
   // Create Phaser GameObject instances
@@ -121,6 +121,22 @@ export default class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.enemies, (p, e) => {
       // console.log("Damage!");
       this.iState.life -= this.iState.damage;
+
+      // add little animation when the player is damaged
+      const tween = this.tweens.add({
+        targets: this.player,
+        alpha: {
+          start: 0.2,
+          from: 0.2,
+          to: 1,
+        },
+        // repeat: 1, // repeat n times
+        duration: 200,
+        onComplete: () => {
+          tween.stop();
+        },
+      });
+
       if (this.iState.life === 0) {
         this.gameOver();
       }
