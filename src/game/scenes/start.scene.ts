@@ -6,7 +6,10 @@ export default class StartScene extends Phaser.Scene {
   // preload all game assets
   preload() {
     this.load.image("platform", "assets/platform.png");
-    this.load.image("player", "assets/dude.png");
+    // this.load.image("player", "assets/dude.png");
+    // Player is added as spritesheet composed of many sprites
+    // we're assigning a size for each frame (32x48)
+    this.load.spritesheet("player", "assets/dude_sprite.png", { frameWidth: 32, frameHeight: 48 });
     this.load.image("bullet", "assets/bullet.png");
     this.load.image("enemy1", "assets/e1.png");
     this.load.image("enemy2", "assets/e2.png");

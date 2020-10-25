@@ -102,9 +102,28 @@ export default class MainScene extends Phaser.Scene {
     /* 
       Objects setup
       allow the player to collide with world bounds
+      create animations for the player (once created the animations gloabals and are available to all GameObjects)
       create two platforms on which the player will move
     */
     this.player.setCollideWorldBounds(true);
+    this.player.setFrame(4);
+    this.anims.create({
+      key: "left",
+      frames: this.anims.generateFrameNumbers("player", { start: 0, end: 3 }),
+      frameRate: 10,
+      repeat: -1,
+    });
+    this.anims.create({
+      key: "turn",
+      frames: [{ key: "player", frame: 4 }],
+      frameRate: 20,
+    });
+    this.anims.create({
+      key: "right",
+      frames: this.anims.generateFrameNumbers("player", { start: 5, end: 8 }),
+      frameRate: 10,
+      repeat: -1,
+    });
     this.platforms.create(0, 800, "platform"); // (x,y,sprite name)
     this.platforms.create(500, 800, "platform");
 
@@ -158,10 +177,13 @@ export default class MainScene extends Phaser.Scene {
     // Listen player input and move on left/right and fire
     if (this.keys.left?.isDown) {
       this.player.setVelocityX(-this.iState.playerSpeed.x);
+      this.player.anims.play("left", true);
     } else if (this.keys.right?.isDown) {
       this.player.setVelocityX(this.iState.playerSpeed.x);
+      this.player.anims.play("right", true);
     } else {
       this.player.setVelocityX(0);
+      this.player.anims.play("turn", true);
     }
     if (this.keys.space?.isDown) {
       this.fire();
