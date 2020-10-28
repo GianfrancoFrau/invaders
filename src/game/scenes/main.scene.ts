@@ -1,28 +1,14 @@
+import { DEFAULTS } from "../game";
+
 // A global "state" object that contains default game settings
-const invadersState = {
-  playerSpeed: {
-    x: 300,
-    y: 100,
-  },
-  bulletSpeed: {
-    x: 400,
-    y: 800,
-  },
-  enemiesSpeed: {
-    y: 50,
-  },
-  point: 5,
-  life: 3,
-  damage: 1,
+const state = {
+  life: 0,
   score: 0,
-  bullets: 3,
   nextFire: 0,
   destroyed: 0,
-  fireRate: 400,
   startTime: 0,
-  bulletDistance: 20,
-  enemiesGeneratorDelay: 1000,
 };
+
 // Object deep clone
 const clone = (o) => JSON.parse(JSON.stringify(o));
 
@@ -31,29 +17,19 @@ export default class MainScene extends Phaser.Scene {
   private platforms: Phaser.Physics.Arcade.StaticGroup;
   private keys: Phaser.Types.Input.Keyboard.CursorKeys;
   private enemies: Phaser.Physics.Arcade.Group;
-  private enemiesGenerator: Phaser.Time.TimerEvent;
+  private bugsGenerator: Phaser.Time.TimerEvent;
   private bullets: Phaser.Physics.Arcade.Group;
   private iState;
   private gameScore: Phaser.GameObjects.Text;
 
-  // Apply custom config for this scene that will override global game config
   constructor() {
-    super({
-      key: "MainScene",
-      physics: {
-        default: "arcade",
-        arcade: {
-          gravity: {
-            y: 100,
-          },
-        },
-      },
-    });
+    super({ key: "MainScene" });
   }
 
   init() {
-    // console.log("main.init");
-    this.iState = clone(invadersState);
+    // console.log('main.init');
+    this.iState = clone(state);
+    this.iState.life = DEFAULTS.PLAYER.LIFE;
   }
 
   getGameScore(score, destroyed, life): string {
@@ -87,22 +63,23 @@ export default class MainScene extends Phaser.Scene {
       a "generateEnemies" function that will be executed how set in "enemiesGeneratorDelay"
     */
     this.createMenu();
-    this.player = this.physics.add.sprite(250, 735, "player");
+    this.player = this.physics.add.sprite(250, 750, "player");
     this.platforms = this.physics.add.staticGroup();
     this.keys = this.input.keyboard.createCursorKeys();
     this.enemies = this.physics.add.group();
-    this.bullets = this.physics.add.group({ defaultKey: "bullet", maxSize: this.iState.bullets });
-    this.enemiesGenerator = this.time.addEvent({
-      delay: this.iState.enemiesGeneratorDelay,
-      callback: this.generateEnemy,
+    this.bullets = this.physics.add.group({ defaultKey: "bullet", maxSize: DEFAULTS.BULLET.QUANTITY });
+    this.bugsGenerator = this.time.addEvent({
+      delay: DEFAULTS.ENEMIES.BUG.DELAY,
+      callback: this.generateBug,
       callbackScope: this,
       loop: true,
     });
 
-    /* 
+    /*
       Objects setup
       allow the player to collide with world bounds
       create animations for the player (once created the animations gloabals and are available to all GameObjects)
+      create an explosion animation
       create two platforms on which the player will move
     */
     this.player.setCollideWorldBounds(true);
@@ -124,6 +101,14 @@ export default class MainScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
+    this.anims.create({
+      key: "explode",
+      frames: this.anims.generateFrameNumbers("explosion", { start: 0, end: 5 }),
+      frameRate: 20,
+      repeat: 0,
+      hideOnComplete: true,
+    });
+
     this.platforms.create(0, 800, "platform"); // (x,y,sprite name)
     this.platforms.create(500, 800, "platform");
 
@@ -139,7 +124,7 @@ export default class MainScene extends Phaser.Scene {
     this.physics.add.collider(this.enemies, this.platforms, (enemy) => enemy.destroy());
     this.physics.add.collider(this.player, this.enemies, (p, e) => {
       // console.log("Damage!");
-      this.iState.life -= this.iState.damage;
+      this.iState.life -= DEFAULTS.ENEMIES.BUG.DAMAGE;
 
       // add little animation when the player is damaged
       const tween = this.tweens.add({
@@ -150,7 +135,7 @@ export default class MainScene extends Phaser.Scene {
           to: 1,
         },
         // repeat: 1, // repeat n times
-        duration: 200,
+        duration: DEFAULTS.PLAYER.HIT_ANIMATION_DURATION,
         onComplete: () => {
           tween.stop();
         },
@@ -168,7 +153,6 @@ export default class MainScene extends Phaser.Scene {
     this.physics.world.on("worldbounds", (item) => {
       // Disable body, deactivate game object, hide game object
       item.gameObject.disableBody(true, true);
-      this.iState.bullets++;
     });
   }
 
@@ -176,73 +160,92 @@ export default class MainScene extends Phaser.Scene {
   update() {
     // Listen player input and move on left/right and fire
     if (this.keys.left?.isDown) {
-      this.player.setVelocityX(-this.iState.playerSpeed.x);
+      this.player.setVelocityX(-DEFAULTS.PLAYER.VELOCITY.X);
       this.player.anims.play("left", true);
     } else if (this.keys.right?.isDown) {
-      this.player.setVelocityX(this.iState.playerSpeed.x);
+      this.player.setVelocityX(DEFAULTS.PLAYER.VELOCITY.X);
       this.player.anims.play("right", true);
     } else {
       this.player.setVelocityX(0);
       this.player.anims.play("turn", true);
     }
+    // Jump
+    // if (this.keys.up?.isDown && this.player.body.touching.down) {
+    //   this.player.setVelocityY(-DEFAULTS.PLAYER.VELOCITY.Y);
+    // }
     if (this.keys.space?.isDown) {
       this.fire();
     }
     this.updateMenu();
   }
 
-  // Generates one enemy with random properties
-  generateEnemy() {
+  // Generates one bug with random properties
+  generateBug() {
     const x = this.generateRandomNumberBetween(30, 570);
     const y = 60;
-    const velocity = this.iState.enemiesSpeed.y + this.generateRandomNumberBetween(this.iState.enemiesSpeed.y / 2, this.iState.enemiesSpeed.y * 1.5);
-    const scale = 1 + this.generateRandomNumberBetween(0, 2);
+    const speedY = DEFAULTS.ENEMIES.BUG.VELOCITY.Y;
+    const velocity = speedY + this.generateRandomNumberBetween(speedY / 2, speedY * 1.5);
     const enemyType = "enemy" + this.generateRandomNumberBetween(1, 3);
     const enemy = this.enemies.create(x, y, enemyType);
-    enemy.setScale(scale);
     enemy.setVelocityY(velocity);
-    // console.log("enemy", { enemy, enemyType, x, y, scale, velocity });
+    // console.log("enemy", { enemy, enemyType, x, y, velocity });
   }
 
   // Fire a bullet
   fire() {
     // change fireRate and bullets to improve shot frequency
-    if (this.time.now > this.iState.nextFire && this.iState.bullets > 0) {
-      this.iState.nextFire = this.time.now + this.iState.fireRate;
-      const distance = this.iState.bulletDistance;
+    if (this.time.now > this.iState.nextFire) {
+      this.iState.nextFire = this.time.now + DEFAULTS.BULLET.FIRERATE;
+      const distance = DEFAULTS.BULLET.DISTANCE_FROM_PLAYER;
       const coords = { x: this.player.x, y: this.player.y - distance };
-      // get a bullet item and place on the given coordinates
-      const bullet = this.bullets.get(coords.x, coords.y);
-      if (bullet) {
-        if (!bullet.body.enable) {
-          bullet.enableBody();
-        }
-        bullet.setActive(true);
-        bullet.setVisible(true);
-        bullet.setVelocityY(-this.iState.bulletSpeed.y);
-        // Turn on wall collision
-        bullet.setCollideWorldBounds(true);
-        // Allows to listen to the 'worldbounds' event
-        bullet.body.onWorldBounds = true;
-        this.iState.bullets--;
-        // console.log("Fired bullets", this.iState.bullets);
-        // Bullet - enemy collision
-        this.physics.add.collider(this.enemies, bullet, (a, b) => {
-          this.iState.score += this.iState.point;
-          this.iState.destroyed++;
-          this.iState.bullets++;
-          a.destroy();
-          b.destroy();
-          // console.log("Hit!");
-        });
+      this.fireBullet(coords.x, coords.y);
+    }
+  }
+
+  fireBullet(x: number, y: number) {
+    // get a bullet item and place on the given coordinates
+    const bullet = this.bullets.get(x, y);
+    if (bullet) {
+      if (!bullet.body.enable) {
+        bullet.enableBody();
       }
+      bullet.setActive(true);
+      bullet.setVisible(true);
+      bullet.setVelocityY(-DEFAULTS.BULLET.VELOCITY.Y);
+      // Turn on wall collision
+      bullet.setCollideWorldBounds(true);
+      // Allows to listen to the 'worldbounds' event
+      bullet.body.onWorldBounds = true;
+      // Bullet - enemy collision
+      this.physics.add.collider(this.enemies, bullet, (
+        bullet: any /*Phaser.Types.Physics.Arcade.GameObjectWithBody*/,
+        enemy: any /*Phaser.Types.Physics.Arcade.GameObjectWithBody*/
+      ) => {
+        this.iState.score += DEFAULTS.BULLET.POINT;
+        this.iState.destroyed++;
+
+        // console.log("Hit", bullet.texture.key, enemy.texture.key, { enemy, bullet });
+
+        const x = enemy.x;
+        const y = enemy.y;
+        bullet.destroy();
+        enemy.destroy();
+        const explosion = this.physics.add.sprite(x, y, "explosion");
+        explosion.play("explode");
+        // Optional: listen to explode "animationcomplete"
+        // explosion.on("animationcomplete", (animation, frame) => {
+        //   if (animation.key === "explode") {
+        //     console.log({ animation, frame }, explosion);
+        //   }
+        // });
+      });
     }
   }
 
   gameOver() {
     // console.log("Game over", this.iState);
     // destroy the enemies generator loop
-    this.enemiesGenerator.destroy();
+    this.bugsGenerator.destroy();
     // stop this scene and go to the final scene passing the score
     this.scene.stop();
     this.scene.start("EndScene", { score: this.iState.score });

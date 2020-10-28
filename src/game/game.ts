@@ -3,9 +3,41 @@ import StartScene from "./scenes/start.scene";
 import MainScene from "./scenes/main.scene";
 import EndScene from "./scenes/end.scene";
 
-const DEFAULT_WIDTH = 600;
-const DEFAULT_HEIGHT = 800;
-const RESPONSIVE = true; // change this flag to enable/disable responsiveness
+export const DEFAULTS = {
+  WIDTH: 600,
+  HEIGHT: 800,
+  RESPONSIVE: true, // change this flag to enable/disable responsiveness
+  GRAVITY: {
+    Y: 0,
+  },
+  DEBUG: false,
+  PLAYER: {
+    VELOCITY: {
+      X: 300,
+      Y: 100,
+    },
+    HIT_ANIMATION_DURATION: 200,
+    LIFE: 3,
+  },
+  BULLET: {
+    POINT: 5,
+    QUANTITY: 50, // preload bullets
+    VELOCITY: {
+      Y: 1000,
+    },
+    FIRERATE: 500,
+    DISTANCE_FROM_PLAYER: 20,
+  },
+  ENEMIES: {
+    BUG: {
+      DAMAGE: 1,
+      VELOCITY: {
+        Y: 50,
+      },
+      DELAY: 1000, // generate enemy each 1000 ms
+    },
+  },
+};
 
 // Phaser Game Config https://photonstorm.github.io/phaser3-docs/Phaser.Core.Config.html
 const config: Phaser.Types.Core.GameConfig = {
@@ -13,8 +45,17 @@ const config: Phaser.Types.Core.GameConfig = {
   backgroundColor: "#ffffff",
   scale: {
     parent: "game",
-    width: DEFAULT_WIDTH,
-    height: DEFAULT_HEIGHT,
+    width: DEFAULTS.WIDTH,
+    height: DEFAULTS.HEIGHT,
+  },
+  physics: {
+    default: "arcade",
+    arcade: {
+      debug: DEFAULTS.DEBUG,
+      gravity: {
+        y: DEFAULTS.GRAVITY.Y,
+      },
+    },
   },
   scene: [StartScene, MainScene, EndScene],
 };
@@ -45,7 +86,7 @@ window.addEventListener("load", () => {
   window.focus();
 
   // Resize game
-  if (RESPONSIVE) {
+  if (DEFAULTS.RESPONSIVE) {
     resizeGame();
     window.addEventListener("resize", resizeGame);
   }
