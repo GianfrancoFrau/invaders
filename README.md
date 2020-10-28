@@ -1,6 +1,7 @@
 # Invaders
 
 I'm learning Phaser.js, so I made a super simple bug shooter.
+This project is based on Phaser 3 + Typescript + Webpack.
 
 ## How to use
 - clone this repository
@@ -8,6 +9,10 @@ I'm learning Phaser.js, so I made a super simple bug shooter.
 - npm start
 
 ## Changelog
+
+v 1.3
+
+- add explosion animation on enemy hit
 
 v 1.2
 
