@@ -4,11 +4,18 @@ I'm learning Phaser.js, so I made a super simple bug shooter.
 This project is based on Phaser 3 + Typescript + Webpack.
 
 ## How to use
-- clone this repository
-- npm install
-- npm start
+```
+git clone https://github.com/GianfrancoFrau/invaders.git invaders
+cd invaders
+npm install
+npm start
+```
 
 ## Changelog
+
+v. 1.4
+
+- minor tweaks
 
 v 1.3
 

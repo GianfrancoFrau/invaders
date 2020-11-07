@@ -6,7 +6,7 @@ import EndScene from "./scenes/end.scene";
 export const DEFAULTS = {
   WIDTH: 600,
   HEIGHT: 800,
-  RESPONSIVE: true, // change this flag to enable/disable responsiveness
+  RESPONSIVE: false, // change this flag to enable/disable responsiveness
   GRAVITY: {
     Y: 0,
   },
