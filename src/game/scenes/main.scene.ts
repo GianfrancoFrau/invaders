@@ -109,8 +109,10 @@ export default class MainScene extends Phaser.Scene {
       hideOnComplete: true,
     });
 
-    this.platforms.create(0, 800, "platform"); // (x,y,sprite name)
-    this.platforms.create(500, 800, "platform");
+    // Create a base and position in the center X of the game
+    // Set displayWidth to cover entire game X
+    const ground = this.platforms.create(Number(this.sys.game.config.width)/2, Number(this.sys.game.config.height), "platform"); // (x,y,sprite name)
+    ground.displayWidth = this.sys.game.config.width;
 
     /* 
       Collisions
