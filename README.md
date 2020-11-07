@@ -15,11 +15,11 @@ npm start
 
 v. 1.4
 
-- minor tweaks
+- Minor tweaks
 
 v 1.3
 
-- add explosion animation on enemy hit
+- Add explosion animation on enemy hit
 
 v 1.2
 
@@ -29,7 +29,6 @@ v. 1.1
 
 - Responsive and centered game screen
 - Add simple animation using Phaser.Tween when player is damaged
-
 
 v. 1.0
 
